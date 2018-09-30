@@ -1,13 +1,15 @@
 package lambda.part3.exercise;
 
-import com.google.common.primitives.Chars;
 import lambda.data.Employee;
 import lambda.data.JobHistoryEntry;
 import lambda.data.Person;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 
 import static org.hamcrest.MatcherAssert.assertThat;
