@@ -1,70 +1,80 @@
-package streams.part1.exercise;
+package lambda.part3.example;
 
 import lambda.data.Employee;
 import lambda.data.JobHistoryEntry;
 import lambda.data.Person;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
+import java.util.function.Function;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.is;
 
-@SuppressWarnings({"ConstantConditions", "unused"})
-class Exercise1 {
+@SuppressWarnings({"unused", "ConstantConditions"})
+public class Example4 {
 
-    @Test
-    void findPersonsEverWorkedInEpam() {
-        List<Employee> employees = getEmployees();
+    private static class LazyCollectionHelper<T, R> {
 
-        // TODO реализация, использовать Collectors.toList()
-        List<Person> personsEverWorkedInEpam = null;
+        List<T> source;
+        Function<T, List<R>> transform;
 
-        assertThat(personsEverWorkedInEpam, contains(
-                employees.get(0).getPerson(),
-                employees.get(1).getPerson(),
-                employees.get(4).getPerson(),
-                employees.get(5).getPerson())
-        );
+        public LazyCollectionHelper(List<T> list, Function<T, List<R>> function) {
+            this.source = Objects.requireNonNull(list);
+            this.transform = Objects.requireNonNull(function);
+        }
+
+        public static <T> LazyCollectionHelper<T, T> from(List<T> list) {
+            return new LazyCollectionHelper<>(list, Collections::singletonList);
+        }
+
+        public <U> LazyCollectionHelper<T, U> flatMap(Function<R, List<U>> flatMapping) {
+            return new LazyCollectionHelper<>(source, magicallyReduce(flatMapping).compose(transform));
+        }
+
+        public <U> LazyCollectionHelper<T, U> map(Function<R, U> mapping) {
+            return new LazyCollectionHelper<>(source,
+                    magicallyReduce(mapping.andThen(Collections::singletonList)).compose(transform));
+        }
+
+        public List<R> force() {
+            return magicallyReduce(transform).apply(source);
+        }
+
+        private <U, V> Function<List<U>, List<V>> magicallyReduce(Function<U, List<V>> function) {
+            return list -> {
+                List<V> result = new ArrayList<>();
+                list.forEach(function.andThen(result::addAll)::apply);
+                return result;
+            };
+        }
     }
 
     @Test
-    void findPersonsBeganCareerInEpam() {
+    void mapEmployeesToCodesOfLetterTheirPositionsUsingLazyFlatMapHelper() {
         List<Employee> employees = getEmployees();
 
-        // TODO реализация, использовать Collectors.toList()
-        List<Person> startedFromEpam = null;
-
-        assertThat(startedFromEpam, contains(
-                employees.get(0).getPerson(),
-                employees.get(1).getPerson(),
-                employees.get(4).getPerson()
-        ));
+        List<Integer> codes =
+                LazyCollectionHelper.from(employees)
+                                    .flatMap(Employee::getJobHistory)
+                                    .map(JobHistoryEntry::getPosition)
+                                    .flatMap(Example4::calcCodes)
+                                    .force();
+        assertThat(codes, Matchers.contains(calcCodes("dev", "dev", "tester", "dev", "dev", "QA", "QA", "dev", "tester", "tester", "QA", "QA", "QA", "dev").toArray()));
     }
 
-    @Test
-    void findAllCompanies() {
-        List<Employee> employees = getEmployees();
-
-        // TODO реализация, использовать Collectors.toSet()
-        Set<String> companies = null;
-
-        assertThat(companies, containsInAnyOrder("EPAM", "google", "yandex", "mail.ru", "T-Systems"));
-    }
-
-    @Test
-    void findMinimalAgeOfEmployees() {
-        List<Employee> employees = getEmployees();
-
-        // TODO реализация
-        Integer minimalAge = null;
-
-        assertThat(minimalAge, is(21));
+    private static List<Integer> calcCodes(String... strings) {
+        List<Integer> codes = new ArrayList<>();
+        for (String string : strings) {
+            for (char letter : string.toCharArray()) {
+                codes.add((int) letter);
+            }
+        }
+        return codes;
     }
 
     private static List<Employee> getEmployees() {
@@ -109,4 +119,5 @@ class Exercise1 {
                         ))
         );
     }
+
 }
