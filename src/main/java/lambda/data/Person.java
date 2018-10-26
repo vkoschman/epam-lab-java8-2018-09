@@ -23,10 +23,6 @@ public class Person implements Serializable {
         age = -1;
     }
 
-    public String getFirstName(Person this) {
-        return firstName;
-    }
-
     public String getLastName(Person this) {
         return this.lastName;
     }
