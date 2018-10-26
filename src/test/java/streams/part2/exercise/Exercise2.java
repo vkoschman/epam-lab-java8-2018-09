@@ -222,7 +222,8 @@ class Exercise2 {
                     return employee.getJobHistory().stream().map(job -> new Pair<>(job, person));
                 })
                 .collect(groupingBy(pair -> pair.getKey().getEmployer(),
-                        collectingAndThen(collectingAndThen(toMap(Pair::getValue, x -> x.getKey().getDuration(), (oldValue, newValue) -> oldValue + newValue), entry -> entry.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue))), entry -> entry.get().getKey())));
+                        collectingAndThen(collectingAndThen(toMap(Pair::getValue, x -> x.getKey().getDuration(), (oldValue, newValue) -> oldValue + newValue), 
+                                                            entry -> entry.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue))), entry -> entry.get().getKey())));
 
         assertThat(collect, hasEntry("EPAM", employees.get(4).getPerson()));
         assertThat(collect, hasEntry("google", employees.get(1).getPerson()));
