@@ -58,6 +58,14 @@ class Exercise2 {
         );
     }
 
+    private static Map<String, Person> prepareExpected(List<Employee> employees) {
+        Map<String, Person> expected = new HashMap<>();
+        expected.put("dev", employees.get(0).getPerson());
+        expected.put("tester", employees.get(4).getPerson());
+        expected.put("QA", employees.get(4).getPerson());
+        return expected;
+    }
+
     /**
      * Преобразовать список сотрудников в отображение [компания -> множество людей, когда-либо работавших в этой компании].
      * <p>
@@ -115,10 +123,12 @@ class Exercise2 {
     void employersStuffList() {
         List<Employee> employees = getEmployees();
 
-        Map<String, Set<Person>> result = employees.stream().flatMap(employee -> {
-            Person person = employee.getPerson();
-            return employee.getJobHistory().stream().map(job -> new Pair<>(job.getEmployer(), person));
-        }).collect(groupingBy(Pair::getKey, mapping(Pair::getValue, toSet())));
+        Map<String, Set<Person>> result = employees.stream()
+                .flatMap(employee -> {
+                    Person person = employee.getPerson();
+                    return employee.getJobHistory().stream().map(job -> new Pair<>(job.getEmployer(), person));
+                })
+                .collect(groupingBy(Pair::getKey, mapping(Pair::getValue, toSet())));
 
         assertThat(result, hasEntry((is("yandex")), contains(employees.get(2).getPerson())));
         assertThat(result, hasEntry((is("mail.ru")), contains(employees.get(2).getPerson())));
@@ -185,7 +195,8 @@ class Exercise2 {
     void indexByFirstEmployer() {
         List<Employee> employees = getEmployees();
 
-        Map<String, Set<Person>> result = employees.stream().map(employee -> new Pair<>(employee.getJobHistory().get(0).getEmployer(), employee.getPerson()))
+        Map<String, Set<Person>> result = employees.stream()
+                .map(employee -> new Pair<>(employee.getJobHistory().get(0).getEmployer(), employee.getPerson()))
                 .collect(groupingBy(Pair::getKey, mapping(Pair::getValue, toSet())));
 
         assertThat(result, hasEntry(is("yandex"), contains(employees.get(2).getPerson())));
@@ -205,7 +216,13 @@ class Exercise2 {
     void greatestExperiencePerEmployer() {
         List<Employee> employees = getEmployees();
 
-        Map<String, Person> collect = null;
+        Map<String, Person> collect  = employees.stream()
+                .flatMap(employee -> {
+                    Person person = employee.getPerson();
+                    return employee.getJobHistory().stream().map(job -> new Pair<>(job, person));
+                })
+                .collect(groupingBy(pair -> pair.getKey().getEmployer(),
+                        collectingAndThen(collectingAndThen(toMap(Pair::getValue, x -> x.getKey().getDuration(), (oldValue, newValue) -> oldValue + newValue), entry -> entry.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue))), entry -> entry.get().getKey())));
 
         assertThat(collect, hasEntry("EPAM", employees.get(4).getPerson()));
         assertThat(collect, hasEntry("google", employees.get(1).getPerson()));
@@ -213,6 +230,5 @@ class Exercise2 {
         assertThat(collect, hasEntry("mail.ru", employees.get(2).getPerson()));
         assertThat(collect, hasEntry("T-Systems", employees.get(5).getPerson()));
     }
-
 
 }
